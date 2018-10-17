@@ -1,12 +1,10 @@
 'use strict';
 
-var PouchDB = require('pouchdb-memory');
-var Authentication = require('../lib');
-PouchDB.plugin(Authentication);
-
 var utils = require('./test-utils');
 var chai = require('chai');
 var should = chai.should();
+
+var PouchDB = utils.TestPouch;
 
 var serverHost = utils.getConfig().serverHost;
 
@@ -41,7 +39,7 @@ describe('admins', function () {
       return undefined;
     }).then(function (nodeName) {
       var opts = {
-        configUrl: dbHost + (nodeName ? '/_node/' + nodeName : '') + '/_config',
+        configUrl: (nodeName ? '/_node/' + nodeName : '') + '/_config',
       };
 
       return testCreateDeleteAdmin(opts);

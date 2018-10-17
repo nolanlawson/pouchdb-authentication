@@ -1,14 +1,35 @@
 'use strict';
 
-import { AuthError, getBasicAuthHeaders, getUsersUrl, wrapError } from './utils';
+import { AuthError, doFetch, getBasicAuthHeaders } from './utils';
 
-import Promise from 'pouchdb-promise';
-import ajaxCore from 'pouchdb-ajax';
-import { assign, clone, toPromise } from 'pouchdb-utils';
+import { assign, clone, parseUri, toPromise } from 'pouchdb-utils';
+
+function getBaseUrl(db) {
+  // Use PouchDB.defaults' prefix, if any
+  let fullName;
+  if (db.__opts && db.__opts.prefix) {
+    var prefix = db.__opts.prefix;
+    fullName = prefix + (prefix.endsWith('/') ? '' : '/') + db.name;
+  } else {
+    fullName = db.name;
+  }
+
+  var uri = parseUri(fullName);
+
+  // Compute parent path for databases not hosted on domain root (see #215)
+  var path = uri.path;
+  var normalizedPath = path.endsWith('/') ? path.substr(0, -1) : path;
+  var parentPath = normalizedPath.split('/').slice(0, -1).join('/');
+
+  return uri.protocol + '://' +
+      uri.host +
+      (uri.port ? ':' + uri.port : '') +
+      parentPath;
+}
 
 var getUsersDatabaseUrl = function () {
   var db = this;
-  return getUsersUrl(db);
+  return getBaseUrl(db) + '/_users';
 };
 
 function updateUser(db, user, opts, callback) {
@@ -38,26 +59,26 @@ function updateUser(db, user, opts, callback) {
     user = assign(user, {roles: opts.roles});
   }
 
-  var url = getUsersUrl(db) + '/' + encodeURIComponent(user._id);
+  var url = '/_users/' + encodeURIComponent(user._id);
   var ajaxOpts = assign({
     method: 'PUT',
-    url: url,
     body: user,
     headers: getBasicAuthHeaders(db),
   }, opts.ajax || {});
-  ajaxCore(ajaxOpts, wrapError(callback));
+
+  doFetch(db, url, ajaxOpts, callback);
 }
 
 var signUp = toPromise(function (username, password, opts, callback) {
   var db = this;
   if (typeof callback === 'undefined') {
     callback = typeof opts === 'undefined' ? (typeof password === 'undefined' ?
-      username : password) : opts;
+        username : password) : opts;
     opts = {};
   }
   if (['http', 'https'].indexOf(db.type()) === -1) {
     return callback(new AuthError('This plugin only works for the http/https adapter. ' +
-      'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
+        'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
   } else if (!username) {
     return callback(new AuthError('You must provide a username'));
   } else if (!password) {
@@ -86,13 +107,13 @@ var getUser = toPromise(function (username, opts, callback) {
     return callback(new AuthError('you must provide a username'));
   }
 
-  var url = getUsersUrl(db);
+  var url = '/_users/' + encodeURIComponent('org.couchdb.user:' + username);
   var ajaxOpts = assign({
     method: 'GET',
-    url: url + '/' + encodeURIComponent('org.couchdb.user:' + username),
     headers: getBasicAuthHeaders(db),
   }, opts.ajax || {});
-  ajaxCore(ajaxOpts, wrapError(callback));
+
+  doFetch(db, url, ajaxOpts, callback);
 });
 
 var putUser = toPromise(function (username, opts, callback) {
@@ -103,7 +124,7 @@ var putUser = toPromise(function (username, opts, callback) {
   }
   if (['http', 'https'].indexOf(db.type()) === -1) {
     return callback(new AuthError('This plugin only works for the http/https adapter. ' +
-      'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
+        'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
   } else if (!username) {
     return callback(new AuthError('You must provide a username'));
   }
@@ -125,7 +146,7 @@ var deleteUser = toPromise(function (username, opts, callback) {
   }
   if (['http', 'https'].indexOf(db.type()) === -1) {
     return callback(new AuthError('This plugin only works for the http/https adapter. ' +
-      'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
+        'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
   } else if (!username) {
     return callback(new AuthError('You must provide a username'));
   }
@@ -135,13 +156,13 @@ var deleteUser = toPromise(function (username, opts, callback) {
       return callback(error);
     }
 
-    var url = getUsersUrl(db) + '/' + encodeURIComponent(user._id) + '?rev=' + user._rev;
+    var url = '/_users/' + encodeURIComponent(user._id) + '?rev=' + user._rev;
     var ajaxOpts = assign({
       method: 'DELETE',
-      url: url,
       headers: getBasicAuthHeaders(db),
     }, opts.ajax || {});
-    ajaxCore(ajaxOpts, wrapError(callback));
+
+    doFetch(db, url, ajaxOpts, callback);
   });
 });
 
@@ -149,12 +170,12 @@ var changePassword = toPromise(function (username, password, opts, callback) {
   var db = this;
   if (typeof callback === 'undefined') {
     callback = typeof opts === 'undefined' ? (typeof password === 'undefined' ?
-      username : password) : opts;
+        username : password) : opts;
     opts = {};
   }
   if (['http', 'https'].indexOf(db.type()) === -1) {
     return callback(new AuthError('This plugin only works for the http/https adapter. ' +
-      'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
+        'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
   } else if (!username) {
     return callback(new AuthError('You must provide a username'));
   } else if (!password) {
@@ -168,39 +189,39 @@ var changePassword = toPromise(function (username, password, opts, callback) {
 
     user.password = password;
 
-    var url = getUsersUrl(db) + '/' + encodeURIComponent(user._id);
+    var url = '/_users/' + encodeURIComponent(user._id);
     var ajaxOpts = assign({
       method: 'PUT',
-      url: url,
       headers: getBasicAuthHeaders(db),
       body: user,
     }, opts.ajax || {});
-    ajaxCore(ajaxOpts, wrapError(callback));
+
+    doFetch(db, url, ajaxOpts, callback);
   });
 });
 
 var changeUsername = toPromise(function (oldUsername, newUsername, opts, callback) {
   var db = this;
   var USERNAME_PREFIX = 'org.couchdb.user:';
-  var ajax = function (opts) {
+  var fetch = function (url, opts) {
     return new Promise(function (resolve, reject) {
-      ajaxCore(opts, wrapError(function (err, res) {
+      doFetch(db, url, opts, function (err, res) {
         if (err) {
           return reject(err);
         }
         resolve(res);
-      }));
+      });
     });
   };
   var updateUser = function (user, opts) {
-    var url = getUsersUrl(db) + '/' + encodeURIComponent(user._id);
+    var url = '/_users/' + encodeURIComponent(user._id);
     var updateOpts = assign({
       method: 'PUT',
-      url: url,
       headers: getBasicAuthHeaders(db),
       body: user,
     }, opts.ajax);
-    return ajax(updateOpts);
+
+    return fetch(url, updateOpts);
   };
   if (typeof callback === 'undefined') {
     callback = opts;
@@ -209,7 +230,7 @@ var changeUsername = toPromise(function (oldUsername, newUsername, opts, callbac
   opts.ajax = opts.ajax || {};
   if (['http', 'https'].indexOf(db.type()) === -1) {
     return callback(new AuthError('This plugin only works for the http/https adapter. ' +
-      'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
+        'So you should use new PouchDB("http://mysite.com:5984/mydb") instead.'));
   }
   if (!newUsername) {
     return callback(new AuthError('You must provide a new username'));
@@ -219,24 +240,24 @@ var changeUsername = toPromise(function (oldUsername, newUsername, opts, callbac
   }
 
   db.getUser(newUsername, opts)
-  .then(function () {
-    var error = new AuthError('user already exists');
-    error.taken = true;
-    throw error;
-  }, function () {
-    return db.getUser(oldUsername, opts);
-  })
-  .then(function (user) {
-    var newUser = clone(user);
-    delete newUser._rev;
-    newUser._id = USERNAME_PREFIX + newUsername;
-    newUser.name = newUsername;
-    newUser.roles = opts.roles || user.roles || {};
-    return updateUser(newUser, opts).then(function () {
-      user._deleted = true;
-      return updateUser(user, opts);
-    });
-  }).then(function (res) {
+      .then(function () {
+        var error = new AuthError('user already exists');
+        error.taken = true;
+        throw error;
+      }, function () {
+        return db.getUser(oldUsername, opts);
+      })
+      .then(function (user) {
+        var newUser = clone(user);
+        delete newUser._rev;
+        newUser._id = USERNAME_PREFIX + newUsername;
+        newUser.name = newUsername;
+        newUser.roles = opts.roles || user.roles || {};
+        return updateUser(newUser, opts).then(function () {
+          user._deleted = true;
+          return updateUser(user, opts);
+        });
+      }).then(function (res) {
     callback(null, res);
   }).catch(callback);
 });

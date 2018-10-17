@@ -1,12 +1,10 @@
 'use strict';
 
-var PouchDB = require('pouchdb-memory');
-var Authentication = require('../lib');
-PouchDB.plugin(Authentication);
-
 var utils = require('./test-utils');
 var chai = require('chai');
 chai.should();
+
+var PouchDB = utils.TestPouch;
 
 var serverHost = utils.getConfig().serverHost;
 

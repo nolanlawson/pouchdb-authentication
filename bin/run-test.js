@@ -8,7 +8,11 @@ var server = process.env.SERVER;
 var client = process.env.CLIENT || 'phantom';
 
 runServer(server, function (serverHost) {
-  return runTests(client, serverHost);
+  return runTests(client, serverHost).catch(function (error) {
+    console.error('Launching tests failed');
+    console.error(error);
+    throw error;
+  });
 });
 
 function runTests(client, serverHost) {
@@ -46,6 +50,9 @@ function buildKarmaConf(client, serverHost) {
     browserify: {
       debug: true,
       transform: ['brfs'],
+      configure: function (bundle) {
+        bundle.add('node_modules/whatwg-fetch');
+      },
     },
     port: 9876,
     colors: true,

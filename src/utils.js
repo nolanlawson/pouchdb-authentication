@@ -1,73 +1,62 @@
 'use strict';
 
-import urlJoin from 'url-join';
-import urlParse from 'url-parse';
 import inherits from 'inherits';
 import { btoa } from 'pouchdb-binary-utils';
-
-function getBaseUrl(db) {
-  // Parse database url
-  let url;
-  if (typeof db.getUrl === 'function') { // pouchdb pre-6.0.0
-    url = urlParse(db.getUrl());
-  } else { // pouchdb post-6.0.0
-    // Use PouchDB.defaults' prefix, if any
-    let prefix = db.__opts && db.__opts.prefix ? db.__opts.prefix + '/' : '';
-    url = urlParse(prefix + db.name);
-  }
-
-  // Compute parent path for databases not hosted on domain root (see #215)
-  let path = url.pathname;
-  path = path.substr(-1, 1) === '/' ? path.substr(0, -1) : path;
-  let parentPath = path.split('/').slice(0, -1).join('/');
-
-  return url.origin + parentPath;
-}
-
-function getConfigUrl(db, nodeName) {
-  return urlJoin(getBaseUrl(db), (nodeName ? '/_node/' + nodeName : '') + '/_config');
-}
-
-function getUsersUrl(db) {
-  return urlJoin(getBaseUrl(db), '/_users');
-}
-
-function getSessionUrl(db) {
-  return urlJoin(getBaseUrl(db), '/_session');
-}
+import { Headers } from "pouchdb-fetch";
+import { assign, parseUri } from "pouchdb-utils";
 
 function getBasicAuthHeaders(db) {
   var auth;
 
-  if (db.__opts.auth) {
+  if (db.__opts && db.__opts.auth) {
     auth = db.__opts.auth;
   } else {
-    var url = urlParse(db.name);
-    if (url.auth) {
-      auth = url;
+    var uri = parseUri(db.name);
+    if (uri.user || uri.password) {
+      auth = {
+        username: uri.user,
+        password: uri.password,
+      };
     }
   }
 
   if (!auth) {
-    return {};
+    return new Headers();
   }
 
   var str = auth.username + ':' + auth.password;
-  var token = btoa(unescape(encodeURIComponent(str)));
-  return {Authorization: 'Basic ' + token};
+  var token = btoa(decodeURIComponent(encodeURIComponent(str)));
+
+  var headers = new Headers();
+  headers.set('Authorization', 'Basic ' + token);
+
+  return headers;
 }
 
-function wrapError(callback) {
-  // provide more helpful error message
-  return function (err, res) {
-    if (err) {
-      if (err.name === 'unknown_error') {
-        err.message = (err.message || '') +
-            ' Unknown error!  Did you remember to enable CORS?';
+function doFetch(db, url, opts, callback) {
+  opts = assign(opts || {});
+
+  if (opts.body && typeof opts.body !== 'string') {
+    opts.body = JSON.stringify(opts.body);
+  }
+
+  db.fetch(url, opts).then(function (res) {
+    var ok = res.ok;
+    return res.json().then(function (content) {
+      if (ok) {
+        callback(null, content);
+      } else {
+        content.name = content.error;
+        callback(content);
       }
+    });
+  }).catch(function (err) {
+    if (err && err.name === 'unknown_error') {
+      err.message = (err.message + ' ' || '') +
+          'Unknown error!  Did you remember to enable CORS?';
     }
-    return callback(err, res);
-  };
+    callback(err);
+  });
 }
 
 function AuthError(message) {
@@ -84,10 +73,6 @@ inherits(AuthError, Error);
 
 export {
   AuthError,
-  getBaseUrl,
+  doFetch,
   getBasicAuthHeaders,
-  getConfigUrl,
-  getSessionUrl,
-  getUsersUrl,
-  wrapError,
 };
