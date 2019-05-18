@@ -1,18 +1,18 @@
-var PouchDB = require('pouchdb-memory');
+var PouchDB = require('./test-pouchdb');
 
-module.exports.getConfig = function () {
+var getConfig = function () {
   return typeof window !== 'undefined' ? window.__karma__.config : global.__testConfig__;
-};
+}
 
-module.exports.ensureUsersDatabaseExists = function (db) {
-  var usersUrl = db.getUsersDatabaseUrl();
-  var usersDb = new PouchDB(usersUrl);
+module.exports.getConfig = getConfig;
+
+module.exports.ensureUsersDatabaseExists = function () {
+  var usersDb = new PouchDB(getConfig().serverHost + '/_users');
   return usersDb.info();
 };
 
-module.exports.deleteUsers = function (db, users) {
-  var usersUrl = db.getUsersDatabaseUrl();
-  var usersDb = new PouchDB(usersUrl);
+module.exports.deleteUsers = function (users) {
+  var usersDb = new PouchDB(getConfig().serverHost + '/_users');
   return usersDb.allDocs({
     include_docs: true,
     keys: users.map(function (user) {

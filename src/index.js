@@ -7,7 +7,6 @@ import {
   changeUsername,
   deleteUser,
   getUser,
-  getUsersDatabaseUrl,
   putUser,
   signUp,
 } from "./users";
@@ -24,7 +23,6 @@ plugin.getMembership = getMembership;
 plugin.signUpAdmin = signUpAdmin;
 plugin.deleteAdmin = deleteAdmin;
 
-plugin.getUsersDatabaseUrl = getUsersDatabaseUrl;
 plugin.signup = signUp;
 plugin.signUp = signUp;
 plugin.getUser = getUser;

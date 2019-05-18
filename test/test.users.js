@@ -1,6 +1,6 @@
 'use strict';
 
-var PouchDB = require('pouchdb-memory');
+var PouchDB = require('./test-pouchdb');
 var Authentication = require('../lib');
 PouchDB.plugin(Authentication);
 
@@ -19,14 +19,14 @@ describe('users', function () {
 
   beforeEach(function () {
     db = new PouchDB(dbName);
-    return utils.ensureUsersDatabaseExists(db);
+    return utils.ensureUsersDatabaseExists();
   });
 
   afterEach(function () {
     return db.logout().then(function () {
       return db.destroy().then(function () {
         // remove the fake users, hopefully we're in the admin party
-        return utils.deleteUsers(db, users);
+        return utils.deleteUsers(users);
       });
     });
   });
@@ -44,7 +44,7 @@ describe('users', function () {
       return db.signup('superman', 'notclarkkent').then(function (res) {
         should.not.exist(res);
       }).catch(function (err) {
-        err.name.should.equal('conflict');
+        err.error.should.equal('conflict');
       });
     });
   });

@@ -51,6 +51,10 @@ function runServer(serverName, runTests) {
       }).then(function () {
         return runTests(serverHost);
       }).catch(function (exitCode) {
+        if (typeof exitCode !== 'number') {
+          console.error(exitCode);
+          exitCode = 1;
+        }
         return Promise.resolve().then(function () {
           if (handle) {
             return handle.destroy();

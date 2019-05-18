@@ -1,6 +1,6 @@
 'use strict';
 
-var PouchDB = require('pouchdb-memory');
+var PouchDB = require('./test-pouchdb');
 var Authentication = require('../lib');
 PouchDB.plugin(Authentication);
 
@@ -19,14 +19,14 @@ describe('authentication', function () {
 
   beforeEach(function () {
     db = new PouchDB(dbName);
-    return utils.ensureUsersDatabaseExists(db);
+    return utils.ensureUsersDatabaseExists();
   });
 
   afterEach(function () {
     return db.logout().then(function () {
       return db.destroy().then(function () {
         // remove the fake users, hopefully we're in the admin party
-        return utils.deleteUsers(db, users);
+        return utils.deleteUsers(users);
       });
     });
   });

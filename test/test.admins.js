@@ -1,6 +1,6 @@
 'use strict';
 
-var PouchDB = require('pouchdb-memory');
+var PouchDB = require('./test-pouchdb');
 var Authentication = require('../lib');
 PouchDB.plugin(Authentication);
 
@@ -19,7 +19,7 @@ describe('admins', function () {
 
   beforeEach(function () {
     db = new PouchDB(dbName);
-    return utils.ensureUsersDatabaseExists(db);
+    return utils.ensureUsersDatabaseExists();
   });
 
   afterEach(function () {
@@ -41,7 +41,7 @@ describe('admins', function () {
       return undefined;
     }).then(function (nodeName) {
       var opts = {
-        configUrl: dbHost + (nodeName ? '/_node/' + nodeName : '') + '/_config',
+        configUrl: (nodeName ? '/_node/' + nodeName : '') + '/_config',
       };
 
       return testCreateDeleteAdmin(opts);
@@ -59,7 +59,6 @@ describe('admins', function () {
           should.exist(res);
 
           return db.logOut().then(function () {
-
             return db.logIn('anna', 'secret').then(function () {
               should.fail('shouldn\'t have worked');
             }, function (err) {

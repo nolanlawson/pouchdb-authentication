@@ -1,6 +1,6 @@
 'use strict';
 
-var PouchDB = require('pouchdb-memory');
+var PouchDB = require('./test-pouchdb');
 var Authentication = require('../lib');
 PouchDB.plugin(Authentication);
 
@@ -18,7 +18,7 @@ describe('issue-204', function () {
 
   beforeEach(function () {
     db = new PouchDB(dbName);
-    return utils.ensureUsersDatabaseExists(db).then(function () {
+    return utils.ensureUsersDatabaseExists().then(function () {
       return db.signUpAdmin('anna', 'secret');
     }).then(function () {
       return db.signup('spiderman', 'will-remember');
