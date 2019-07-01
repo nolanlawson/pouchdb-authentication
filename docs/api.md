@@ -99,6 +99,8 @@ db.logIn('superman', 'clarkkent', function (err, response) {
 {"ok":true,"name":"david","roles":[]}
 ```
 
+**Note:** If your couchDB server is configured with `require_valid_user = true`, you must provide credentials in the db constructor as detailed here: https://pouchdb.com/api.html#create_database
+
 #### db.logOut([callback])
 
 Logs out whichever user is currently logged in. If nobody's logged in, it does nothing and just returns `{"ok" : true}`.
