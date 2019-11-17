@@ -136,7 +136,7 @@ As of CouchDB 2.1, CouchDB supports couch_peruser configuration options.
 
 Native CouchDB Erlang plugin that automatically creates one database per user.  The database name is just a hex-encoded hash of the user name, and it completely predictable.
 
-**Update!** This is now much easier to use, because there are [prebuilt Docker images](https://hub.docker.com/r/klaemo/couchdb/) containing the `CouchPerUser` plugin.
+**Update!** This is now much easier to use, because there are [prebuilt Docker images (deprecated)](https://hub.docker.com/r/klaemo/couchdb/) containing the `CouchPerUser` plugin.
 
 #### [couchdb-dbperuser-provisioning](https://github.com/pegli/couchdb-dbperuser-provisioning)
 
