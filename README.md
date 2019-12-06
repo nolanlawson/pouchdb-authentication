@@ -31,7 +31,7 @@ That's right, CouchDB is more than a database: it's also a RESTful web server wi
 
 And best of all, CouchDB does it with good ol'-fashioned HTTP. Just open up the network tab and watch the JSON fly back and forth.
 
-To get started, just install CouchDB, throw in [a little SSL](https://wiki.apache.org/couchdb/How_to_enable_SSL), and you've got everything you need for your site's authentication.
+To get started, just install CouchDB, throw in [a little SSL](https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=48203146), and you've got everything you need for your site's authentication.
 
 ### Project status
 
